@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using StockManagementAPI.Data;
 using StockManagementAPI.Models;
@@ -15,7 +17,8 @@ public class OrdersController : ControllerBase
     {
         _context = context;
     }
-
+    
+    [Authorize]
     [HttpPost("checkout")]
     public IActionResult Checkout([FromBody] CreateOrderRequest request)
     {
@@ -23,10 +26,19 @@ public class OrdersController : ControllerBase
 
         try
         {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdString == null)
+            {
+                return Unauthorized(new { Message = "Biletiniz gecersiz!"});
+            }
+
+            int currentUserId = int.Parse(userIdString);
+            
             //Bos bir order olusturuyoruz
             var newOrder = new Order
             {
-                UserId = request.UserId,
+                UserId = currentUserId,
                 OrderDate = DateTime.UtcNow,
                 TotalAmount = 0, //Fiyati daha sonra hesaplayacagiz
                 Items = new List<OrderItem>()
